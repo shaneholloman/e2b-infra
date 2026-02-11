@@ -29,9 +29,21 @@ type SandboxNetworkConfig struct {
 	Ingress *SandboxNetworkIngressConfig `json:"ingress,omitempty"`
 }
 
+type SandboxAutoResumePolicy string
+
+const (
+	SandboxAutoResumeAny SandboxAutoResumePolicy = "any"
+	SandboxAutoResumeOff SandboxAutoResumePolicy = "off"
+)
+
+type SandboxAutoResumeConfig struct {
+	Policy SandboxAutoResumePolicy `json:"policy"`
+}
+
 type PausedSandboxConfig struct {
-	Version string                `json:"version"`
-	Network *SandboxNetworkConfig `json:"network,omitempty"`
+	Version    string                   `json:"version"`
+	Network    *SandboxNetworkConfig    `json:"network,omitempty"`
+	AutoResume *SandboxAutoResumeConfig `json:"autoResume,omitempty"`
 }
 
 // BuildStatus represents the raw status value written to the env_builds table.
