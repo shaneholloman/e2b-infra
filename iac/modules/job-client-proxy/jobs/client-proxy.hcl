@@ -42,6 +42,17 @@ job "client-proxy" {
       name = "client-proxy"
       port = "proxy"
 
+      // This route is fallback (with lowest priority) to catch all requests as it serves sandbox traffic with dynamic subdomains
+      tags = [
+        "traefik.enable=true",
+
+        "traefik.http.routers.client-proxy.rule=PathPrefix(`/`)",
+        "traefik.http.routers.client-proxy.ruleSyntax=v2",
+        "traefik.http.routers.client-proxy.priority=100",
+
+        "traefik.http.services.client-proxy.loadbalancer.server.port=$${NOMAD_PORT_proxy}"
+      ]
+
       check {
         type     = "http"
         name     = "health"
@@ -89,8 +100,8 @@ job "client-proxy" {
         NODE_ID = "$${node.unique.id}"
         NODE_IP = "$${attr.unique.network.ip-address}"
 
-        HEALTH_PORT = "${health_port}"
-        PROXY_PORT  = "${proxy_port}"
+        HEALTH_PORT = "$${NOMAD_PORT_health}"
+        PROXY_PORT  = "$${NOMAD_PORT_proxy}"
 
         ENVIRONMENT = "${environment}"
 
@@ -101,8 +112,11 @@ job "client-proxy" {
         REDIS_CLUSTER_URL   = "${redis_cluster_url}"
         REDIS_TLS_CA_BASE64 = "${redis_tls_ca_base64}"
 
+        # used only when client-proxy is deployed directly in the cluster next to the API
+        %{ if api_grpc_address != "" }
         API_GRPC_ADDRESS = "${api_grpc_address}"
 
+        %{ endif }
         %{ if launch_darkly_api_key != "" }
         LAUNCH_DARKLY_API_KEY         = "${launch_darkly_api_key}"
         %{ endif }
@@ -110,7 +124,7 @@ job "client-proxy" {
 
       config {
         network_mode = "host"
-        image        = "${image_name}"
+        image        = "${image}"
         ports        = ["proxy", "health"]
       }
     }

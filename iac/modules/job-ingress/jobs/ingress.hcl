@@ -1,7 +1,6 @@
 job "ingress" {
-  datacenters = ["${gcp_zone}"]
-  node_pool   = "${node_pool}"
-  priority    = 90
+  node_pool = "${node_pool}"
+  priority  = 90
 
   group "ingress" {
     count = ${count}
@@ -52,6 +51,21 @@ job "ingress" {
         timeout  = "3s"
         port     = "${ingress_port}"
       }
+    }
+
+    # Expose Nomad dashboard and API via Traefik ingress
+    service {
+      name = "ingress-dashboard"
+      port = "control"
+      task = "ingress"
+
+      tags = [
+        "traefik.enable=true",
+
+        "traefik.http.routers.traefik.rule=PathPrefix(`/dashboard`) || PathPrefix(`/api`)",
+        "traefik.http.routers.traefik.entrypoints=traefik",
+        "traefik.http.routers.traefik.service=api@internal",
+      ]
     }
 
     task "ingress" {
